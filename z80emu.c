@@ -1526,7 +1526,7 @@ emulate_next_instruction:
                                         int     d;
 
                                         Z80_FETCH_BYTE(pc, d);
-                                        d = ((char) d) + HL_IX_IY;
+                                        d = ((signed char) d) + HL_IX_IY;
 
                                         READ_BYTE(d, x);
                                         RLC(x);
@@ -1570,7 +1570,7 @@ emulate_next_instruction:
                                         int     d;
 
                                         Z80_FETCH_BYTE(pc, d);
-                                        d = ((char) d) + HL_IX_IY;
+                                        d = ((signed char) d) + HL_IX_IY;
 
                                         READ_BYTE(d, x);
                                         RL(x);
@@ -1614,7 +1614,7 @@ emulate_next_instruction:
                                         int     d;
 
                                         Z80_FETCH_BYTE(pc, d);
-                                        d = ((char) d) + HL_IX_IY;
+                                        d = ((signed char) d) + HL_IX_IY;
 
                                         READ_BYTE(d, x);
                                         RRC(x);
@@ -1658,7 +1658,7 @@ emulate_next_instruction:
                                         int     d;
 
                                         Z80_FETCH_BYTE(pc, d);
-                                        d = ((char) d) + HL_IX_IY;
+                                        d = ((signed char) d) + HL_IX_IY;
 
                                         READ_BYTE(d, x);
                                         RR_INSTRUCTION(x);
@@ -1702,7 +1702,7 @@ emulate_next_instruction:
                                         int     d;
 
                                         Z80_FETCH_BYTE(pc, d);
-                                        d = ((char) d) + HL_IX_IY;
+                                        d = ((signed char) d) + HL_IX_IY;
 
                                         READ_BYTE(d, x);
                                         SLA(x);
@@ -1746,7 +1746,7 @@ emulate_next_instruction:
                                         int     d;
 
                                         Z80_FETCH_BYTE(pc, d);
-                                        d = ((char) d) + HL_IX_IY;
+                                        d = ((signed char) d) + HL_IX_IY;
 
                                         READ_BYTE(d, x);
                                         SLL(x);
@@ -1790,7 +1790,7 @@ emulate_next_instruction:
                                         int     d;
 
                                         Z80_FETCH_BYTE(pc, d);
-                                        d = ((char) d) + HL_IX_IY;
+                                        d = ((signed char) d) + HL_IX_IY;
 
                                         READ_BYTE(d, x);
                                         SRA(x);
@@ -1834,7 +1834,7 @@ emulate_next_instruction:
                                         int     d;
 
                                         Z80_FETCH_BYTE(pc, d);
-                                        d = ((char) d) + HL_IX_IY;
+                                        d = ((signed char) d) + HL_IX_IY;
 
                                         READ_BYTE(d, x);
                                         SRL(x);
@@ -1913,7 +1913,7 @@ emulate_next_instruction:
                                 } else {
 
                                         Z80_FETCH_BYTE(pc, d);
-                                        d = ((char) d) + HL_IX_IY;
+                                        d = ((signed char) d) + HL_IX_IY;
 
                                         pc += 2;
 
@@ -1963,7 +1963,7 @@ emulate_next_instruction:
                                         int     d;
 
                                         Z80_FETCH_BYTE(pc, d);
-                                        d = ((char) d) + HL_IX_IY;
+                                        d = ((signed char) d) + HL_IX_IY;
 
                                         READ_BYTE(d, x);
                                         x |= 1 << Y(opcode);
@@ -2007,7 +2007,7 @@ emulate_next_instruction:
                                         int     d;
 
                                         Z80_FETCH_BYTE(pc, d);
-                                        d = ((char) d) + HL_IX_IY;
+                                        d = ((signed char) d) + HL_IX_IY;
 
                                         READ_BYTE(d, x);
                                         x &= ~(1 << Y(opcode));
@@ -2073,7 +2073,7 @@ emulate_next_instruction:
                                 int     e;
                                 
                                 Z80_FETCH_BYTE(pc, e);
-                                e = (char) e;
+                                e = (signed char) e;
                                 pc += e + 1;
 
                                 elapsed_cycles += 8;
@@ -2089,7 +2089,7 @@ emulate_next_instruction:
                                 if (DD(Q(opcode))) {
                                 
                                         Z80_FETCH_BYTE(pc, e);
-                                        e = (char) e;
+                                        e = (signed char) e;
                                         pc += e + 1;
 
                                         elapsed_cycles += 8;
@@ -2125,7 +2125,7 @@ emulate_next_instruction:
                                 if (--B) {
                                 
                                         Z80_FETCH_BYTE(pc, e);
-                                        e = (char) e;
+                                        e = (signed char) e;
                                         pc += e + 1;
 
                                         elapsed_cycles += 9;
