@@ -301,9 +301,11 @@ Z80_STATE state;
         }                                                               \
 }
 
+uint8_t input_byte(uint16_t port);
+
 #define Z80_INPUT_BYTE(port, x)                                         \
 {                                                                       \
-        (x) = 0;                /* Make compiler happy. */              \
+        (x) = input_byte((port) & 0xffff);                              \
         /*SystemCall(state);*/                                          \
 }
 

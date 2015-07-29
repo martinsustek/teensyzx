@@ -6,7 +6,6 @@ extern "C" {
 #endif
 
 
-
 #include "z80emu.h"
 
 const int ledPin = 13;
@@ -16,6 +15,19 @@ const int ledPin = 13;
 #define DISPLAY_CS (3)
 #define DISPLAY_RST (4)
 
+#define KEYBOARD_11 (15)
+#define KEYBOARD_12 (16)
+#define KEYBOARD_13 (17)
+#define KEYBOARD_14 (18)
+#define KEYBOARD_15 (19)
+#define KEYBOARD_21 (2) // SAME AS DISPLAY OUTPUTS
+#define KEYBOARD_22 (14)
+#define KEYBOARD_23 (7)
+#define KEYBOARD_24 (8)
+#define KEYBOARD_25 (6)
+#define KEYBOARD_26 (20)
+#define KEYBOARD_27 (21)
+#define KEYBOARD_28 (5)
 
 
 int cycles_emulated;
@@ -28,6 +40,60 @@ uint16_t display_line_number = 0;
 uint8_t display_flashing = 0;
 elapsedMicros display_timer;
 elapsedMicros cpu_timer;
+
+void keyboard_init() {
+  pinMode(KEYBOARD_11, INPUT_PULLUP);
+  pinMode(KEYBOARD_12, INPUT_PULLUP);
+  pinMode(KEYBOARD_13, INPUT_PULLUP);
+  pinMode(KEYBOARD_14, INPUT_PULLUP);
+  pinMode(KEYBOARD_15, INPUT_PULLUP);
+}
+
+uint8_t keyboard_read(uint8_t address) {
+  uint8_t out = 0;
+  digitalWriteFast(DISPLAY_CS, HIGH);
+
+  digitalWriteFast(KEYBOARD_21, (address & 0b00000001) ? LOW : HIGH);
+  digitalWriteFast(KEYBOARD_22, (address & 0b00000010) ? LOW : HIGH);
+  digitalWriteFast(KEYBOARD_23, (address & 0b00000100) ? LOW : HIGH);
+  digitalWriteFast(KEYBOARD_24, (address & 0b00001000) ? LOW : HIGH);
+  digitalWriteFast(KEYBOARD_25, (address & 0b00010000) ? LOW : HIGH);
+  digitalWriteFast(KEYBOARD_26, (address & 0b00100000) ? LOW : HIGH);
+  digitalWriteFast(KEYBOARD_27, (address & 0b01000000) ? LOW : HIGH);
+  digitalWriteFast(KEYBOARD_28, (address & 0b10000000) ? LOW : HIGH);
+
+  if (digitalRead(KEYBOARD_11) != 0) {
+    out |= 0b00000001;  
+  }
+  if (digitalRead(KEYBOARD_12) != 0) {
+    out |= 0b00000010;  
+  }
+  if (digitalRead(KEYBOARD_13) != 0) {
+    out |= 0b00000100;  
+  }
+  if (digitalRead(KEYBOARD_14) != 0) {
+    out |= 0b00001000;  
+  }
+  if (digitalRead(KEYBOARD_15) != 0) {
+    out |= 0b00010000;  
+  }
+
+  digitalWriteFast(DISPLAY_CS, LOW);
+  return out;
+}
+
+uint8_t input_byte(uint16_t port) {
+  uint8_t out = 0;
+
+  if ((port & 0xFF) == 0xFE) {
+    out |= keyboard_read(port >> 8);
+  }
+
+  Serial.printf("%d\n", out);
+  
+  return out;
+}
+
 
 void display_init() {
   myDisplay = UTFT(ILI9325D_8, DISPLAY_RS, DISPLAY_WR, DISPLAY_CS, DISPLAY_RST);
@@ -90,6 +156,7 @@ void setup() {
   Z80Reset(&state);  
   cycles_emulated = 0;
 
+  keyboard_init();
   display_init();
 }
 
