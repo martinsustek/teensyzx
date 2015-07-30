@@ -305,7 +305,7 @@ uint8_t input_byte(uint16_t port);
 
 #define Z80_INPUT_BYTE(port, x)                                         \
 {                                                                       \
-        (x) = input_byte((port) & 0xffff);                              \
+        (x) = input_byte((state->registers.byte[Z80_L]) << 8 | (port));                              \
         /*SystemCall(state);*/                                          \
 }
 

@@ -41,59 +41,6 @@ uint8_t display_flashing = 0;
 elapsedMicros display_timer;
 elapsedMicros cpu_timer;
 
-void keyboard_init() {
-  pinMode(KEYBOARD_11, INPUT_PULLUP);
-  pinMode(KEYBOARD_12, INPUT_PULLUP);
-  pinMode(KEYBOARD_13, INPUT_PULLUP);
-  pinMode(KEYBOARD_14, INPUT_PULLUP);
-  pinMode(KEYBOARD_15, INPUT_PULLUP);
-}
-
-uint8_t keyboard_read(uint8_t address) {
-  uint8_t out = 0;
-  digitalWriteFast(DISPLAY_CS, HIGH);
-
-  digitalWriteFast(KEYBOARD_21, (address & 0b00000001) ? LOW : HIGH);
-  digitalWriteFast(KEYBOARD_22, (address & 0b00000010) ? LOW : HIGH);
-  digitalWriteFast(KEYBOARD_23, (address & 0b00000100) ? LOW : HIGH);
-  digitalWriteFast(KEYBOARD_24, (address & 0b00001000) ? LOW : HIGH);
-  digitalWriteFast(KEYBOARD_25, (address & 0b00010000) ? LOW : HIGH);
-  digitalWriteFast(KEYBOARD_26, (address & 0b00100000) ? LOW : HIGH);
-  digitalWriteFast(KEYBOARD_27, (address & 0b01000000) ? LOW : HIGH);
-  digitalWriteFast(KEYBOARD_28, (address & 0b10000000) ? LOW : HIGH);
-
-  if (digitalRead(KEYBOARD_11) != 0) {
-    out |= 0b00000001;  
-  }
-  if (digitalRead(KEYBOARD_12) != 0) {
-    out |= 0b00000010;  
-  }
-  if (digitalRead(KEYBOARD_13) != 0) {
-    out |= 0b00000100;  
-  }
-  if (digitalRead(KEYBOARD_14) != 0) {
-    out |= 0b00001000;  
-  }
-  if (digitalRead(KEYBOARD_15) != 0) {
-    out |= 0b00010000;  
-  }
-
-  digitalWriteFast(DISPLAY_CS, LOW);
-  return out;
-}
-
-uint8_t input_byte(uint16_t port) {
-  uint8_t out = 0;
-
-  if ((port & 0xFF) == 0xFE) {
-    out |= keyboard_read(port >> 8);
-  }
-
-  Serial.printf("%d\n", out);
-  
-  return out;
-}
-
 
 void display_init() {
   myDisplay = UTFT(ILI9325D_8, DISPLAY_RS, DISPLAY_WR, DISPLAY_CS, DISPLAY_RST);
@@ -145,6 +92,89 @@ inline void display_draw_line(int line_number) {
 }
 
 
+void keyboard_init() {
+  pinMode(KEYBOARD_11, INPUT_PULLUP);
+  pinMode(KEYBOARD_12, INPUT_PULLUP);
+  pinMode(KEYBOARD_13, INPUT_PULLUP);
+  pinMode(KEYBOARD_14, INPUT_PULLUP);
+  pinMode(KEYBOARD_15, INPUT_PULLUP);
+}
+
+uint8_t keyboard_read(uint8_t address) {
+  uint8_t out = 0;
+  digitalWriteFast(DISPLAY_CS, HIGH);
+
+  digitalWriteFast(KEYBOARD_21, (address & 0b00000001) ? LOW : HIGH);
+  digitalWriteFast(KEYBOARD_22, (address & 0b00000010) ? LOW : HIGH);
+  digitalWriteFast(KEYBOARD_23, (address & 0b00000100) ? LOW : HIGH);
+  digitalWriteFast(KEYBOARD_24, (address & 0b00001000) ? LOW : HIGH);
+  digitalWriteFast(KEYBOARD_25, (address & 0b00010000) ? LOW : HIGH);
+  digitalWriteFast(KEYBOARD_26, (address & 0b00100000) ? LOW : HIGH);
+  digitalWriteFast(KEYBOARD_27, (address & 0b01000000) ? LOW : HIGH);
+  digitalWriteFast(KEYBOARD_28, (address & 0b10000000) ? LOW : HIGH);
+
+  if (digitalRead(KEYBOARD_11) != 0) {
+    out |= 0b00000001;  
+  }
+  if (digitalRead(KEYBOARD_12) != 0) {
+    out |= 0b00000010;  
+  }
+  if (digitalRead(KEYBOARD_13) != 0) {
+    out |= 0b00000100;  
+  }
+  if (digitalRead(KEYBOARD_14) != 0) {
+    out |= 0b00001000;  
+  }
+  if (digitalRead(KEYBOARD_15) != 0) {
+    out |= 0b00010000;  
+  }
+
+  digitalWriteFast(DISPLAY_CS, LOW);
+  return out;
+}
+
+uint8_t input_byte(uint16_t port) {
+  uint8_t out = 0;
+
+  uint8_t line = 0;
+  switch ((port >> 8) - 0x28) {
+  case 4:
+    line = 0b00000001;
+    break;
+  case 5:
+    line = 0b00000010;
+    break;
+  case 6:
+    line = 0b00000100;
+    break;
+  case 3:
+    line = 0b00001000;
+    break;
+  case 2:
+    line = 0b00010000;
+    break;
+  case 7:
+    line = 0b00100000;
+    break;
+  case 1:
+    line = 0b01000000;
+    break;
+  case 0:
+    line = 0b10000000;
+    break;
+  }
+
+  if ((port & 0xFF) == 0xFE) {
+    out |= keyboard_read(line);
+  }
+
+  //Serial.printf("%x %d\n", port, out);
+
+  return out;
+}
+
+
+
 
 
 void setup() {
@@ -178,11 +208,15 @@ void loop() {
     display_line_number++;
     if (display_line_number > 625) {
       display_line_number = 1;
+      
       display_flashing++;
       if (display_flashing >= 32) {
         display_flashing = 0;
       }
+
+      cycles_emulated += Z80Interrupt(&state, 0xff);
     }
+    
     if ((display_line_number >= 60) && (display_line_number < 60+192) && ((display_line_number % 2) == 0)) {
       display_draw_line(display_line_number - 60);
     }
