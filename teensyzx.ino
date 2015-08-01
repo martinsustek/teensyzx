@@ -92,7 +92,7 @@ inline void display_draw_line(int line_number) {
 }
 
 
-void keyboard_init() {
+inline void keyboard_init() {
   pinMode(KEYBOARD_11, INPUT_PULLUP);
   pinMode(KEYBOARD_12, INPUT_PULLUP);
   pinMode(KEYBOARD_13, INPUT_PULLUP);
@@ -100,18 +100,18 @@ void keyboard_init() {
   pinMode(KEYBOARD_15, INPUT_PULLUP);
 }
 
-uint8_t keyboard_read(uint8_t address) {
+inline uint8_t keyboard_read(uint8_t address) {
   uint8_t out = 0;
   digitalWriteFast(DISPLAY_CS, HIGH);
 
-  digitalWriteFast(KEYBOARD_21, (address & 0b00000001) ? LOW : HIGH);
-  digitalWriteFast(KEYBOARD_22, (address & 0b00000010) ? LOW : HIGH);
-  digitalWriteFast(KEYBOARD_23, (address & 0b00000100) ? LOW : HIGH);
-  digitalWriteFast(KEYBOARD_24, (address & 0b00001000) ? LOW : HIGH);
-  digitalWriteFast(KEYBOARD_25, (address & 0b00010000) ? LOW : HIGH);
-  digitalWriteFast(KEYBOARD_26, (address & 0b00100000) ? LOW : HIGH);
-  digitalWriteFast(KEYBOARD_27, (address & 0b01000000) ? LOW : HIGH);
-  digitalWriteFast(KEYBOARD_28, (address & 0b10000000) ? LOW : HIGH);
+  digitalWriteFast(KEYBOARD_21, ((~address) & 0b00001000) ? LOW : HIGH);
+  digitalWriteFast(KEYBOARD_22, ((~address) & 0b00000100) ? LOW : HIGH);
+  digitalWriteFast(KEYBOARD_23, ((~address) & 0b00000010) ? LOW : HIGH);
+  digitalWriteFast(KEYBOARD_24, ((~address) & 0b00010000) ? LOW : HIGH);
+  digitalWriteFast(KEYBOARD_25, ((~address) & 0b00100000) ? LOW : HIGH);
+  digitalWriteFast(KEYBOARD_26, ((~address) & 0b00000001) ? LOW : HIGH);
+  digitalWriteFast(KEYBOARD_27, ((~address) & 0b01000000) ? LOW : HIGH);
+  digitalWriteFast(KEYBOARD_28, ((~address) & 0b10000000) ? LOW : HIGH);
 
   if (digitalRead(KEYBOARD_11) != 0) {
     out |= 0b00000001;  
@@ -136,39 +136,9 @@ uint8_t keyboard_read(uint8_t address) {
 uint8_t input_byte(uint16_t port) {
   uint8_t out = 0;
 
-  uint8_t line = 0;
-  switch ((port >> 8) - 0x28) {
-  case 4:
-    line = 0b00000001;
-    break;
-  case 5:
-    line = 0b00000010;
-    break;
-  case 6:
-    line = 0b00000100;
-    break;
-  case 3:
-    line = 0b00001000;
-    break;
-  case 2:
-    line = 0b00010000;
-    break;
-  case 7:
-    line = 0b00100000;
-    break;
-  case 1:
-    line = 0b01000000;
-    break;
-  case 0:
-    line = 0b10000000;
-    break;
-  }
-
   if ((port & 0xFF) == 0xFE) {
-    out |= keyboard_read(line);
+    out |= keyboard_read(port >> 8);
   }
-
-  //Serial.printf("%x %d\n", port, out);
 
   return out;
 }
@@ -190,6 +160,9 @@ void setup() {
   display_init();
 }
 
+int cycle_measure = 0;
+int cycle_measure_frame_counter = 0;
+
 void loop() {
 
   if (cpu_timer * 35 >= cycles_emulated * 10) {
@@ -197,12 +170,15 @@ void loop() {
       cpu_timer -= 1000000;
       cycles_emulated -= 3500000;
     }
-    
-    cycles_emulated += Z80Emulate(&state, 112);
+
+    int cycles = Z80Emulate(&state, 112);
+    //Serial.printf("Cycles emulated: %d\n", cycles);
+    cycles_emulated += cycles;
+    cycle_measure += cycles;
   }
 
 
-  if (display_timer >= 64) {
+  while (display_timer >= 64) {
     display_timer -= 64;
     
     display_line_number++;
@@ -214,7 +190,16 @@ void loop() {
         display_flashing = 0;
       }
 
-      cycles_emulated += Z80Interrupt(&state, 0xff);
+      int cycles = Z80Interrupt(&state, 0xff);
+      cycles_emulated += cycles;
+      cycle_measure += cycles;
+
+      cycle_measure_frame_counter++;
+      if (cycle_measure_frame_counter > 50) {
+        Serial.printf("CPU emulation speed %f MHz\n", (float)(cycle_measure) / 1000000);
+        cycle_measure = 0;
+        cycle_measure_frame_counter = 0;
+      }
     }
     
     if ((display_line_number >= 60) && (display_line_number < 60+192) && ((display_line_number % 2) == 0)) {
@@ -224,26 +209,6 @@ void loop() {
       display_draw_line(display_line_number - 372);
     }
   }
-
-
-  
-  /*digitalWriteFast(ledPin, HIGH);
-  delay(50);
-  digitalWriteFast(ledPin, LOW);
-  //delay(950);*/
-
-  //Serial.printf("Emulating... ");
-  /*for (int i = 0; i < 50; i++) {
-    millis0 = millis();
-    cycles_emulated += Z80Emulate(&state, 70000);
-    millis1 = millis();
-    display_draw();
-    millis2 = millis();
-    Serial.printf("Emulation took %d ms, rendering took %d ms, total %d ms.\n", millis1 - millis0, millis2 - millis1, millis2 - millis0);
-  }*/
-
-  //Serial.printf("cycles emulated: %d\n", cycles_emulated);
-  //cycles_emulated = 0;
 
 }
 
